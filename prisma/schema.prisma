@@ -1,0 +1,154 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  clerkId     String   @unique
+  username    String   @unique
+  email       String   @unique
+  displayName String
+  avatarUrl   String?
+  createdAt   DateTime @default(now())
+
+  friendshipsA     Friendship[]    @relation("userA")
+  friendshipsB     Friendship[]    @relation("userB")
+  sentRequests     FriendRequest[] @relation("sender")
+  receivedRequests FriendRequest[] @relation("receiver")
+  createdMatches   Match[]
+  matchPlayers     MatchPlayer[]
+  uploadedPhotos   MatchPhoto[]
+  ratingsSent      Rating[]        @relation("rater")
+  ratingsReceived  Rating[]        @relation("rated")
+  stats            MatchStat[]
+}
+
+model Friendship {
+  id        String   @id @default(cuid())
+  userAId   String
+  userBId   String
+  createdAt DateTime @default(now())
+
+  userA User @relation("userA", fields: [userAId], references: [id])
+  userB User @relation("userB", fields: [userBId], references: [id])
+
+  @@unique([userAId, userBId])
+}
+
+model FriendRequest {
+  id         String              @id @default(cuid())
+  senderId   String
+  receiverId String
+  status     FriendRequestStatus @default(PENDING)
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+
+  sender   User @relation("sender",   fields: [senderId],   references: [id])
+  receiver User @relation("receiver", fields: [receiverId], references: [id])
+
+  @@unique([senderId, receiverId])
+}
+
+enum FriendRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model Match {
+  id              String      @id @default(cuid())
+  creatorId       String
+  title           String
+  location        String
+  format          Int
+  pricePerHead    Decimal     @db.Decimal(10, 2)
+  startTime       DateTime
+  endTime         DateTime
+  confirmBy       DateTime
+  status          MatchStatus @default(UPCOMING)
+  ratingWindowEnd DateTime
+  createdAt       DateTime    @default(now())
+
+  creator User          @relation(fields: [creatorId], references: [id])
+  players MatchPlayer[]
+  photos  MatchPhoto[]
+  stats   MatchStat[]
+  ratings Rating[]
+}
+
+enum MatchStatus {
+  UPCOMING
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+model MatchPlayer {
+  id       String            @id @default(cuid())
+  matchId  String
+  userId   String
+  response MatchPlayerStatus @default(PENDING)
+  joinedAt DateTime          @default(now())
+
+  match Match @relation(fields: [matchId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@unique([matchId, userId])
+}
+
+enum MatchPlayerStatus {
+  PENDING
+  CONFIRMED
+  OPTED_OUT
+}
+
+model MatchPhoto {
+  id           String   @id @default(cuid())
+  matchId      String
+  uploadedById String
+  url          String
+  createdAt    DateTime @default(now())
+
+  match      Match @relation(fields: [matchId], references: [id])
+  uploadedBy User  @relation(fields: [uploadedById], references: [id])
+}
+
+model MatchStat {
+  id            String  @id @default(cuid())
+  matchId       String
+  userId        String
+  goals         Int     @default(0)
+  assists       Int     @default(0)
+  keyPasses     Int     @default(0)
+  shotsTaken    Int     @default(0)
+  shotsOnTarget Int     @default(0)
+  fouls         Int     @default(0)
+  saves         Int     @default(0)
+  yellowCard    Boolean @default(false)
+  redCard       Boolean @default(false)
+
+  match Match @relation(fields: [matchId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@unique([matchId, userId])
+}
+
+model Rating {
+  id        String   @id @default(cuid())
+  matchId   String
+  raterId   String
+  ratedId   String
+  score     Int
+  createdAt DateTime @default(now())
+
+  match Match @relation(fields: [matchId], references: [id])
+  rater User  @relation("rater", fields: [raterId], references: [id])
+  rated User  @relation("rated", fields: [ratedId], references: [id])
+
+  @@unique([matchId, raterId, ratedId])
+}
