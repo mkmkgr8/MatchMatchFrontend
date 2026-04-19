@@ -36,7 +36,7 @@ export default async function FeedPage() {
   }
 
   const me = await getCurrentUser()
-  if (!me) redirect('/sign-in')
+  if (!me) redirect('/sign-in') // only reachable if DB is down
 
   const friendships = await prisma.friendship.findMany({
     where: { OR: [{ userAId: me.id }, { userBId: me.id }] },
