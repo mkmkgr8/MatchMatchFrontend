@@ -62,12 +62,16 @@ export async function createMatch(input: {
   redirect(`/matches/${match.id}`)
 }
 
-export async function respondToMatch(matchId: string, action: 'CONFIRMED' | 'OPTED_OUT') {
+export async function respondToMatch(
+  matchId: string,
+  action: 'CONFIRMED' | 'OPTED_OUT'
+): Promise<{ error: string } | { ok: true }> {
+  
   const me    = await getMe()
   const match = await prisma.match.findUnique({ where: { id: matchId } })
 
-  if (!match) return { error: 'Match not found' }
-  if (match.status !== 'UPCOMING') return { error: 'Match is no longer open' }
+  if (!match)                        return { error: 'Match not found' }
+  if (match.status !== 'UPCOMING')   return { error: 'Match is no longer open' }
   if (new Date() >= match.confirmBy) return { error: 'Confirm window has closed' }
 
   await prisma.matchPlayer.upsert({

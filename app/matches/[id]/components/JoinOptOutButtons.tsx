@@ -20,7 +20,7 @@ export default function JoinOptOutButtons({ matchId, currentResponse }: Props) {
     setError(null)
     const res = await respondToMatch(matchId, action)
     if ('error' in res) {
-      setError(res.error)
+      setError(res.error ?? 'Something went wrong')
     } else {
       setResponse(action)
     }
