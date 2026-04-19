@@ -38,7 +38,7 @@ export default function RatingForm({ matchId, players }: { matchId: string; play
 
     const res = await submitRatings(matchId, ratings)
     if ('error' in res) {
-      setError(res.error)
+      setError(res.error ?? 'Something went wrong')
     } else {
       setSaved(true)
     }

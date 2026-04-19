@@ -34,7 +34,7 @@ export default function MatchForm() {
     })
 
     if (res && 'error' in res) {
-      setError(res.error)
+      setError(res.error ?? 'Something went wrong')
       setLoading(false)
     }
     // on success, createMatch redirects — no need to handle here

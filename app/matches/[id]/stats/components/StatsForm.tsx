@@ -53,7 +53,7 @@ export default function StatsForm({ matchId, players }: { matchId: string; playe
     const res = await upsertStats(matchId, playerStats)
 
     if ('error' in res) {
-      setError(res.error)
+      setError(res.error ?? 'Something went wrong')
     } else {
       setSaved(true)
     }

@@ -29,7 +29,7 @@ export default function PhotoUploader({ matchId }: { matchId: string }) {
       fd.append('file', compressed, file.name)
 
       const res = await uploadPhoto(matchId, fd)
-      if ('error' in res) setError(res.error)
+      if ('error' in res) setError(res.error ?? 'Upload failed')
     } catch {
       setError('Upload failed. Please try again.')
     } finally {
