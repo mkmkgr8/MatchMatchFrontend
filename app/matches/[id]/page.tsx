@@ -24,11 +24,30 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
   if (!me) redirect('/sign-in')
 
   const match = await prisma.match.findUnique({
-    where:   { id: params.id },
-    include: {
-      creator: true,
-      players: { include: { user: true }, orderBy: { joinedAt: 'asc' } },
-      photos:  { take: 1 },
+    where:  { id: params.id },
+    select: {
+      id:              true,
+      title:           true,
+      creatorId:       true,
+      status:          true,
+      startTime:       true,
+      endTime:         true,
+      confirmBy:       true,
+      ratingWindowEnd: true,
+      format:          true,
+      pricePerHead:    true,
+      location:        true,
+      creator: { select: { displayName: true } },
+      players: {
+        orderBy: { joinedAt: 'asc' },
+        select: {
+          id:       true,
+          userId:   true,
+          response: true,
+          user: { select: { displayName: true, avatarUrl: true } },
+        },
+      },
+      photos: { take: 1, select: { id: true } },
     },
   })
   if (!match) notFound()

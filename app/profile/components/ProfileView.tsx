@@ -11,20 +11,37 @@ type User = {
   displayName: string
   username: string
   avatarUrl: string | null
-  createdAt: Date
 }
 
 export default async function ProfileView({ user }: { user: User }) {
   const confirmedMatches = await prisma.matchPlayer.findMany({
     where:   { userId: user.id, response: 'CONFIRMED' },
-    include: { match: true },
     orderBy: { match: { startTime: 'desc' } },
+    take:    20,
+    select:  {
+      matchId: true,
+      match: { select: { id: true, title: true, startTime: true, endTime: true, status: true } },
+    },
   }).catch(() => [])
 
   const stats = await prisma.matchStat.findMany({
     where:   { userId: user.id },
-    include: { match: { select: { title: true, startTime: true } } },
     orderBy: { match: { startTime: 'desc' } },
+    take:    20,
+    select:  {
+      id:            true,
+      matchId:       true,
+      goals:         true,
+      assists:       true,
+      keyPasses:     true,
+      shotsTaken:    true,
+      shotsOnTarget: true,
+      fouls:         true,
+      saves:         true,
+      yellowCard:    true,
+      redCard:       true,
+      match: { select: { title: true, startTime: true } },
+    },
   }).catch(() => [])
 
   const completedMatchIds = confirmedMatches

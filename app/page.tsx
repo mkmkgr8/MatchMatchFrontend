@@ -37,14 +37,24 @@ export default async function FeedPage() {
   if (!me) redirect('/sign-in')
 
   const friendships = await prisma.friendship.findMany({
-    where: { OR: [{ userAId: me.id }, { userBId: me.id }] },
+    where:  { OR: [{ userAId: me.id }, { userBId: me.id }] },
+    select: { userAId: true, userBId: true },
   }).catch(() => [])
   const friendIds = friendships.map(f => (f.userAId === me.id ? f.userBId : f.userAId))
   const visibleCreatorIds = [...friendIds, me.id]
 
-  const include = {
-    creator: true,
-    players: { include: { user: true } },
+  const matchSelect = {
+    id:           true,
+    title:        true,
+    location:     true,
+    format:       true,
+    pricePerHead: true,
+    startTime:    true,
+    endTime:      true,
+    confirmBy:    true,
+    status:       true,
+    creator: { select: { displayName: true } },
+    players: { select: { userId: true, response: true } },
   } as const
 
   const [upcomingMatches, completedMatches] = await Promise.all([
@@ -56,7 +66,8 @@ export default async function FeedPage() {
         players:   { none: { userId: me.id, response: 'OPTED_OUT' } },
       },
       orderBy: { startTime: 'asc' },
-      include,
+      take:    20,
+      select:  matchSelect,
     }).catch(() => []),
 
     prisma.match.findMany({
@@ -65,7 +76,8 @@ export default async function FeedPage() {
         status:    'COMPLETED',
       },
       orderBy: { startTime: 'desc' },
-      include,
+      take:    20,
+      select:  matchSelect,
     }).catch(() => []),
   ])
 

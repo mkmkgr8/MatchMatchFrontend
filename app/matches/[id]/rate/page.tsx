@@ -12,9 +12,19 @@ export default async function RatePage({ params }: { params: { id: string } }) {
   if (!me) redirect('/sign-in')
 
   const match = await prisma.match.findUnique({
-    where:   { id: params.id },
-    include: {
-      players: { where: { response: 'CONFIRMED' }, include: { user: true } },
+    where:  { id: params.id },
+    select: {
+      endTime:         true,
+      ratingWindowEnd: true,
+      title:           true,
+      players: {
+        where:  { response: 'CONFIRMED' },
+        select: {
+          userId:   true,
+          response: true,
+          user: { select: { displayName: true, avatarUrl: true } },
+        },
+      },
     },
   }).catch(() => null)
   if (!match) notFound()
@@ -29,7 +39,8 @@ export default async function RatePage({ params }: { params: { id: string } }) {
   }
 
   const existing = await prisma.rating.findMany({
-    where: { matchId: params.id, raterId: me.id },
+    where:  { matchId: params.id, raterId: me.id },
+    select: { ratedId: true, score: true },
   }).catch(() => [])
 
   const existingMap = new Map(existing.map(r => [r.ratedId, r.score]))

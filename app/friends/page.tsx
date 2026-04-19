@@ -12,15 +12,24 @@ export default async function FriendsPage() {
   const me = await getCurrentUser()
   if (!me) redirect('/sign-in')
 
+  const userSelect = { id: true, displayName: true, username: true, avatarUrl: true } as const
+
   const [friendships, incoming] = await Promise.all([
     prisma.friendship.findMany({
-      where:   { OR: [{ userAId: me.id }, { userBId: me.id }] },
-      include: { userA: true, userB: true },
+      where:  { OR: [{ userAId: me.id }, { userBId: me.id }] },
+      take:   20,
+      select: {
+        userAId: true,
+        userBId: true,
+        userA:   { select: userSelect },
+        userB:   { select: userSelect },
+      },
     }).catch(() => []),
     prisma.friendRequest.findMany({
       where:   { receiverId: me.id, status: 'PENDING' },
-      include: { sender: true },
       orderBy: { createdAt: 'desc' },
+      take:    20,
+      select:  { id: true, sender: { select: userSelect } },
     }).catch(() => []),
   ])
 

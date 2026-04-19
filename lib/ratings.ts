@@ -3,12 +3,14 @@ import { prisma } from '@/lib/prisma'
 export async function getEffectiveRatings(matchId: string, ratedId: string) {
   const [confirmedPlayers, submitted] = await Promise.all([
     prisma.matchPlayer.findMany({
-      where: { matchId, response: 'CONFIRMED', userId: { not: ratedId } },
-      include: { user: true },
+      where:  { matchId, response: 'CONFIRMED', userId: { not: ratedId } },
+      take:   20,
+      select: { userId: true, user: { select: { displayName: true } } },
     }),
     prisma.rating.findMany({
-      where: { matchId, ratedId },
-      include: { rater: true },
+      where:  { matchId, ratedId },
+      take:   20,
+      select: { raterId: true, score: true },
     }),
   ])
 

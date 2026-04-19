@@ -13,18 +13,25 @@ export default async function PhotosPage({ params }: { params: { id: string } })
   if (!me) redirect('/sign-in')
 
   const match = await prisma.match.findUnique({
-    where: { id: params.id },
+    where:  { id: params.id },
+    select: { id: true },
   }).catch(() => null)
   if (!match) notFound()
 
   const [photos, myPlayer] = await Promise.all([
     prisma.matchPhoto.findMany({
       where:   { matchId: params.id },
-      include: { uploadedBy: true },
       orderBy: { createdAt: 'desc' },
+      take:    20,
+      select:  {
+        id:  true,
+        url: true,
+        uploadedBy: { select: { displayName: true } },
+      },
     }).catch(() => []),
     prisma.matchPlayer.findUnique({
-      where: { matchId_userId: { matchId: params.id, userId: me.id } },
+      where:  { matchId_userId: { matchId: params.id, userId: me.id } },
+      select: { response: true },
     }).catch(() => null),
   ])
 

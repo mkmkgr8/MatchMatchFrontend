@@ -12,7 +12,10 @@ export default async function UserProfilePage({ params }: { params: { id: string
 
   if (params.id === me.id) redirect('/profile')
 
-  const user = await prisma.user.findUnique({ where: { id: params.id } })
+  const user = await prisma.user.findUnique({
+    where:  { id: params.id },
+    select: { id: true, displayName: true, username: true, avatarUrl: true },
+  })
   if (!user) notFound()
 
   return (

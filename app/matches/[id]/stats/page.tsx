@@ -12,10 +12,32 @@ export default async function StatsPage({ params }: { params: { id: string } }) 
   if (!me) redirect('/sign-in')
 
   const match = await prisma.match.findUnique({
-    where:   { id: params.id },
-    include: {
-      players: { where: { response: 'CONFIRMED' }, include: { user: true } },
-      stats:   true,
+    where:  { id: params.id },
+    select: {
+      creatorId: true,
+      endTime:   true,
+      title:     true,
+      players: {
+        where:  { response: 'CONFIRMED' },
+        select: {
+          userId: true,
+          user:   { select: { displayName: true, avatarUrl: true } },
+        },
+      },
+      stats: {
+        select: {
+          userId:        true,
+          goals:         true,
+          assists:       true,
+          keyPasses:     true,
+          shotsTaken:    true,
+          shotsOnTarget: true,
+          fouls:         true,
+          saves:         true,
+          yellowCard:    true,
+          redCard:       true,
+        },
+      },
     },
   }).catch(() => null)
   if (!match) notFound()
