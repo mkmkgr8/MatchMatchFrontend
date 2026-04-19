@@ -40,7 +40,7 @@ export default async function FeedPage() {
 
   const friendships = await prisma.friendship.findMany({
     where: { OR: [{ userAId: me.id }, { userBId: me.id }] },
-  })
+  }).catch(() => [])
   const friendIds = friendships.map(f => (f.userAId === me.id ? f.userBId : f.userAId))
 
   const matches = friendIds.length === 0 ? [] : await prisma.match.findMany({
@@ -55,7 +55,7 @@ export default async function FeedPage() {
       creator: true,
       players: { include: { user: true } },
     },
-  })
+  }).catch(() => [])
 
   return (
     <>

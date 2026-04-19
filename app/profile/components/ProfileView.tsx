@@ -18,27 +18,27 @@ export default async function ProfileView({ user }: { user: User }) {
     where:   { userId: user.id, response: 'CONFIRMED' },
     include: { match: true },
     orderBy: { match: { startTime: 'desc' } },
-  })
+  }).catch(() => [])
 
   const stats = await prisma.matchStat.findMany({
     where:   { userId: user.id },
     include: { match: { select: { title: true, startTime: true } } },
     orderBy: { match: { startTime: 'desc' } },
-  })
+  }).catch(() => [])
 
   const completedMatchIds = confirmedMatches
     .filter(mp => mp.match.status === 'COMPLETED' || new Date() > mp.match.endTime)
     .map(mp => mp.matchId)
 
-  const ratingsData = await Promise.all(
+  const ratingsData = (await Promise.allSettled(
     completedMatchIds.slice(0, 10).map(async matchId => {
       const match    = confirmedMatches.find(mp => mp.matchId === matchId)!.match
-      const ratings  = await getEffectiveRatings(matchId, user.id)
+      const ratings  = await getEffectiveRatings(matchId, user.id).catch(() => [])
       const scores   = ratings.map(r => r.score).filter((s): s is number => s !== null)
       const avg      = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : null
       return { match, ratings, avg }
     })
-  )
+  )).flatMap(r => r.status === 'fulfilled' ? [r.value] : [])
 
   const totalStats = stats.reduce(
     (acc, s) => ({

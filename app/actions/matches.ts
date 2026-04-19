@@ -5,12 +5,6 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
 
-async function getMe() {
-  const user = await getCurrentUser()
-  if (!user) throw new Error('Unauthorized')
-  return user
-}
-
 export async function createMatch(input: {
   title: string
   location: string
@@ -21,8 +15,9 @@ export async function createMatch(input: {
   endDate: string
   endTime: string
   confirmByTime: string | null
-}) {
-  const me = await getMe()
+}): Promise<{ error: string } | never> {
+  const me = await getCurrentUser()
+  if (!me) return { error: 'Unauthorized' }
 
   const startTime = new Date(`${input.startDate}T${input.startTime}`)
   const endTime   = new Date(`${input.endDate}T${input.endTime}`)
@@ -40,61 +35,74 @@ export async function createMatch(input: {
 
   const ratingWindowEnd = new Date(endTime.getTime() + 24 * 60 * 60 * 1000)
 
-  const match = await prisma.match.create({
-    data: {
-      creatorId:    me.id,
-      title:        input.title,
-      location:     input.location,
-      format:       input.format,
-      pricePerHead: input.pricePerHead,
-      startTime,
-      endTime,
-      confirmBy,
-      ratingWindowEnd,
-      status: 'UPCOMING',
-      players: {
-        create: { userId: me.id, response: 'CONFIRMED' },
+  let matchId: string
+  try {
+    const match = await prisma.match.create({
+      data: {
+        creatorId:    me.id,
+        title:        input.title,
+        location:     input.location,
+        format:       input.format,
+        pricePerHead: input.pricePerHead,
+        startTime,
+        endTime,
+        confirmBy,
+        ratingWindowEnd,
+        status: 'UPCOMING',
+        players: { create: { userId: me.id, response: 'CONFIRMED' } },
       },
-    },
-  })
+    })
+    revalidatePath('/')
+    matchId = match.id
+  } catch {
+    return { error: 'Failed to create match. Please try again.' }
+  }
 
-  revalidatePath('/')
-  redirect(`/matches/${match.id}`)
+  redirect(`/matches/${matchId}`)
 }
 
 export async function respondToMatch(
   matchId: string,
   action: 'CONFIRMED' | 'OPTED_OUT'
 ): Promise<{ error: string } | { ok: true }> {
-  
-  const me    = await getMe()
-  const match = await prisma.match.findUnique({ where: { id: matchId } })
+  try {
+    const me = await getCurrentUser()
+    if (!me) return { error: 'Unauthorized' }
 
-  if (!match)                        return { error: 'Match not found' }
-  if (match.status !== 'UPCOMING')   return { error: 'Match is no longer open' }
-  if (new Date() >= match.confirmBy) return { error: 'Confirm window has closed' }
+    const match = await prisma.match.findUnique({ where: { id: matchId } })
+    if (!match)                        return { error: 'Match not found' }
+    if (match.status !== 'UPCOMING')   return { error: 'Match is no longer open' }
+    if (new Date() >= match.confirmBy) return { error: 'Confirm window has closed' }
 
-  await prisma.matchPlayer.upsert({
-    where:  { matchId_userId: { matchId, userId: me.id } },
-    create: { matchId, userId: me.id, response: action },
-    update: { response: action },
-  })
+    await prisma.matchPlayer.upsert({
+      where:  { matchId_userId: { matchId, userId: me.id } },
+      create: { matchId, userId: me.id, response: action },
+      update: { response: action },
+    })
 
-  revalidatePath('/')
-  revalidatePath(`/matches/${matchId}`)
-  return { ok: true }
+    revalidatePath('/')
+    revalidatePath(`/matches/${matchId}`)
+    return { ok: true }
+  } catch {
+    return { error: 'Something went wrong. Please try again.' }
+  }
 }
 
-export async function cancelMatch(matchId: string) {
-  const me    = await getMe()
-  const match = await prisma.match.findUnique({ where: { id: matchId } })
+export async function cancelMatch(matchId: string): Promise<{ error: string } | { ok: true }> {
+  try {
+    const me = await getCurrentUser()
+    if (!me) return { error: 'Unauthorized' }
 
-  if (!match) return { error: 'Match not found' }
-  if (match.creatorId !== me.id) return { error: 'Not authorised' }
+    const match = await prisma.match.findUnique({ where: { id: matchId } })
+    if (!match)                    return { error: 'Match not found' }
+    if (match.creatorId !== me.id) return { error: 'Not authorised' }
 
-  await prisma.match.update({ where: { id: matchId }, data: { status: 'CANCELLED' } })
+    await prisma.match.update({ where: { id: matchId }, data: { status: 'CANCELLED' } })
 
-  revalidatePath('/')
-  revalidatePath(`/matches/${matchId}`)
-  return { ok: true }
+    revalidatePath('/')
+    revalidatePath(`/matches/${matchId}`)
+    return { ok: true }
+  } catch {
+    return { error: 'Something went wrong. Please try again.' }
+  }
 }

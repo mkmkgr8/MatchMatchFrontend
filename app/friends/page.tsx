@@ -16,12 +16,12 @@ export default async function FriendsPage() {
     prisma.friendship.findMany({
       where:   { OR: [{ userAId: me.id }, { userBId: me.id }] },
       include: { userA: true, userB: true },
-    }),
+    }).catch(() => []),
     prisma.friendRequest.findMany({
       where:   { receiverId: me.id, status: 'PENDING' },
       include: { sender: true },
       orderBy: { createdAt: 'desc' },
-    }),
+    }).catch(() => []),
   ])
 
   const friends = friendships.map(f => (f.userAId === me.id ? f.userB : f.userA))

@@ -14,12 +14,9 @@ export default async function RatePage({ params }: { params: { id: string } }) {
   const match = await prisma.match.findUnique({
     where:   { id: params.id },
     include: {
-      players: {
-        where:   { response: 'CONFIRMED' },
-        include: { user: true },
-      },
+      players: { where: { response: 'CONFIRMED' }, include: { user: true } },
     },
-  })
+  }).catch(() => null)
   if (!match) notFound()
 
   const now = new Date()
@@ -31,19 +28,20 @@ export default async function RatePage({ params }: { params: { id: string } }) {
     return <ClosedPage message="Only confirmed players can submit ratings." matchId={params.id} />
   }
 
-  const others = match.players.filter(p => p.userId !== me.id)
-
   const existing = await prisma.rating.findMany({
     where: { matchId: params.id, raterId: me.id },
-  })
+  }).catch(() => [])
+
   const existingMap = new Map(existing.map(r => [r.ratedId, r.score]))
 
-  const players = others.map(p => ({
-    id:          p.userId,
-    displayName: p.user.displayName,
-    avatarUrl:   p.user.avatarUrl,
-    currentScore: existingMap.get(p.userId) ?? null,
-  }))
+  const players = match.players
+    .filter(p => p.userId !== me.id)
+    .map(p => ({
+      id:           p.userId,
+      displayName:  p.user.displayName,
+      avatarUrl:    p.user.avatarUrl,
+      currentScore: existingMap.get(p.userId) ?? null,
+    }))
 
   return (
     <>

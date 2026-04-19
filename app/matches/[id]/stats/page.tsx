@@ -14,25 +14,18 @@ export default async function StatsPage({ params }: { params: { id: string } }) 
   const match = await prisma.match.findUnique({
     where:   { id: params.id },
     include: {
-      players: {
-        where:   { response: 'CONFIRMED' },
-        include: { user: true },
-      },
-      stats: true,
+      players: { where: { response: 'CONFIRMED' }, include: { user: true } },
+      stats:   true,
     },
-  })
+  }).catch(() => null)
   if (!match) notFound()
   if (match.creatorId !== me.id) redirect(`/matches/${params.id}`)
 
   const now           = new Date()
   const editWindowEnd = new Date(match.endTime.getTime() + 48 * 60 * 60 * 1000)
 
-  if (now < match.endTime) {
-    return <ClosedPage message="Match hasn't ended yet." matchId={params.id} />
-  }
-  if (now > editWindowEnd) {
-    return <ClosedPage message="Stats editing window has closed (48hrs after match end)." matchId={params.id} />
-  }
+  if (now < match.endTime) return <ClosedPage message="Match hasn't ended yet." matchId={params.id} />
+  if (now > editWindowEnd) return <ClosedPage message="Stats editing window has closed (48hrs after match end)." matchId={params.id} />
 
   const statsMap = new Map(match.stats.map(s => [s.userId, s]))
 

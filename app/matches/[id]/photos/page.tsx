@@ -13,14 +13,21 @@ export default async function PhotosPage({ params }: { params: { id: string } })
   if (!me) redirect('/sign-in')
 
   const match = await prisma.match.findUnique({
-    where:   { id: params.id },
-    include: { photos: { include: { uploadedBy: true }, orderBy: { createdAt: 'desc' } } },
-  })
+    where: { id: params.id },
+  }).catch(() => null)
   if (!match) notFound()
 
-  const myPlayer = await prisma.matchPlayer.findUnique({
-    where: { matchId_userId: { matchId: params.id, userId: me.id } },
-  })
+  const [photos, myPlayer] = await Promise.all([
+    prisma.matchPhoto.findMany({
+      where:   { matchId: params.id },
+      include: { uploadedBy: true },
+      orderBy: { createdAt: 'desc' },
+    }).catch(() => []),
+    prisma.matchPlayer.findUnique({
+      where: { matchId_userId: { matchId: params.id, userId: me.id } },
+    }).catch(() => null),
+  ])
+
   const canUpload = myPlayer?.response === 'CONFIRMED'
 
   return (
@@ -37,7 +44,7 @@ export default async function PhotosPage({ params }: { params: { id: string } })
           {canUpload && <PhotoUploader matchId={params.id} />}
         </div>
 
-        {match.photos.length === 0 && (
+        {photos.length === 0 && (
           <Card>
             <CardContent className="py-12 text-center text-muted-foreground">
               No photos yet.{canUpload ? ' Upload the first one!' : ''}
@@ -46,7 +53,7 @@ export default async function PhotosPage({ params }: { params: { id: string } })
         )}
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {match.photos.map(photo => (
+          {photos.map(photo => (
             <div key={photo.id} className="relative aspect-square rounded-lg overflow-hidden bg-muted">
               <Image
                 src={photo.url}
