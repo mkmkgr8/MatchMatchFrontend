@@ -40,6 +40,7 @@ export default async function FeedPage() {
     where: { OR: [{ userAId: me.id }, { userBId: me.id }] },
   }).catch(() => [])
   const friendIds = friendships.map(f => (f.userAId === me.id ? f.userBId : f.userAId))
+  const visibleCreatorIds = [...friendIds, me.id]
 
   const include = {
     creator: true,
@@ -47,9 +48,9 @@ export default async function FeedPage() {
   } as const
 
   const [upcomingMatches, completedMatches] = await Promise.all([
-    friendIds.length === 0 ? [] : prisma.match.findMany({
+    prisma.match.findMany({
       where: {
-        creatorId: { in: friendIds },
+        creatorId: { in: visibleCreatorIds },
         status:    'UPCOMING',
         startTime: { gte: new Date() },
         players:   { none: { userId: me.id, response: 'OPTED_OUT' } },
@@ -58,9 +59,9 @@ export default async function FeedPage() {
       include,
     }).catch(() => []),
 
-    friendIds.length === 0 ? [] : prisma.match.findMany({
+    prisma.match.findMany({
       where: {
-        creatorId: { in: friendIds },
+        creatorId: { in: visibleCreatorIds },
         status:    'COMPLETED',
       },
       orderBy: { startTime: 'desc' },
