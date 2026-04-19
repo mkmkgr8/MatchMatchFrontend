@@ -1,6 +1,7 @@
 import { Webhook } from 'svix'
 import { headers } from 'next/headers'
 import { prisma } from '@/lib/prisma'
+import { WebhookEvent } from '@clerk/clerk-sdk-node'
 
 type ClerkUserCreatedEvent = {
   type: 'user.created'
@@ -33,14 +34,14 @@ export async function POST(req: Request) {
 
   const body = await req.text()
 
-  let evt: ClerkEvent
+  let evt: WebhookEvent
   try {
     const wh = new Webhook(secret)
     evt = wh.verify(body, {
       'svix-id':        svixId,
       'svix-timestamp': svixTimestamp,
       'svix-signature': svixSignature,
-    }) as ClerkEvent
+    }) as WebhookEvent
   } catch {
     return new Response('Invalid webhook signature', { status: 400 })
   }
