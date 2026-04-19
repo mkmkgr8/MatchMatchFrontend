@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { getEffectiveRatings } from '@/lib/ratings'
 import { prisma } from '@/lib/prisma'
+import { toIST } from '@/lib/time'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -111,7 +112,7 @@ export default async function ProfileView({ user }: { user: User }) {
                         {match.title}
                       </Link>
                       <p className="text-xs text-muted-foreground">
-                        {new Date(match.startTime).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        {toIST(match.startTime)}
                       </p>
                     </div>
                     {avg !== null && (
@@ -153,7 +154,7 @@ export default async function ProfileView({ user }: { user: User }) {
                       {s.match.title}
                     </Link>
                     <span className="text-xs text-muted-foreground">
-                      {new Date(s.match.startTime).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                      {toIST(s.match.startTime)}
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">

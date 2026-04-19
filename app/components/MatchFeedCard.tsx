@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { MapPin, Clock, Users, Coins } from 'lucide-react'
+import { toIST } from '@/lib/time'
 
 type Props = {
   match: {
@@ -37,8 +38,6 @@ export default function MatchFeedCard({ match, creator, confirmedCount, myRespon
     setLoading(false)
   }
 
-  const start = new Date(match.startTime)
-
   return (
     <Card>
       <CardContent className="p-5">
@@ -55,9 +54,7 @@ export default function MatchFeedCard({ match, creator, confirmedCount, myRespon
         <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground mb-4">
           <span className="flex items-center gap-1.5">
             <Clock className="h-3.5 w-3.5" />
-            {start.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
-            {' '}
-            {start.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+            {toIST(match.startTime)}
           </span>
           <span className="flex items-center gap-1.5">
             <MapPin className="h-3.5 w-3.5" />

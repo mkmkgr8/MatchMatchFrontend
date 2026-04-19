@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { MapPin, Clock, Users, Coins, Camera, BarChart2, Star } from 'lucide-react'
+import { toIST } from '@/lib/time'
 import JoinOptOutButtons from './components/JoinOptOutButtons'
 import CancelMatchButton from './components/CancelMatchButton'
 
@@ -32,7 +33,13 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
   })
   if (!match) notFound()
 
-  const now           = new Date()
+  const now = new Date()
+
+  if (match.status === 'UPCOMING' && now > match.endTime) {
+    await prisma.match.update({ where: { id: params.id }, data: { status: 'COMPLETED' } }).catch(() => null)
+    match.status = 'COMPLETED'
+  }
+
   const myPlayer      = match.players.find(p => p.userId === me.id)
   const isCreator     = match.creatorId === me.id
   const windowOpen    = now < match.confirmBy && match.status === 'UPCOMING'
@@ -63,9 +70,9 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
           <CardContent className="p-5 grid grid-cols-2 gap-3 text-sm">
             <span className="flex items-center gap-2 text-muted-foreground">
               <Clock className="h-4 w-4" />
-              {new Date(match.startTime).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}
+              {toIST(match.startTime)}
               {' → '}
-              {new Date(match.endTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+              {toIST(match.endTime)}
             </span>
             <span className="flex items-center gap-2 text-muted-foreground">
               <MapPin className="h-4 w-4" />
