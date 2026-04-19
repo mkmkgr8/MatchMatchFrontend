@@ -24,7 +24,7 @@ function effectiveAvg(
   allPlayers: GridPlayer[],
   ratings:    GridRating[],
 ): number | null {
-  const raters = allPlayers.filter(p => p.userId !== ratedId)
+  const raters = allPlayers
   if (raters.length === 0) return null
 
   const received = ratings.filter(r => r.ratedId === ratedId)
