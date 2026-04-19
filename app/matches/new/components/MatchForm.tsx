@@ -53,17 +53,8 @@ export default function MatchForm() {
       </div>
 
       <div className="space-y-1.5">
-        <Label>Format</Label>
-        <Select name="format" required>
-          <SelectTrigger>
-            <SelectValue placeholder="Select format" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="5">5-a-side</SelectItem>
-            <SelectItem value="7">7-a-side</SelectItem>
-            <SelectItem value="11">11-a-side</SelectItem>
-          </SelectContent>
-        </Select>
+        <Label htmlFor="format">Format</Label>
+        <Input id="format" name="format" type="number" min="2" placeholder="e.g. 5, 7, 11" required />
       </div>
 
       <div className="space-y-1.5">

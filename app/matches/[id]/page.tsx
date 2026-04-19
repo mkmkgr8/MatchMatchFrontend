@@ -84,6 +84,12 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
 
   const gridPlayers = confirmed.map(p => ({ userId: p.userId, displayName: p.user.displayName }))
 
+  const msRemaining = match.ratingWindowEnd.getTime() - now.getTime()
+  const hours = Math.ceil(msRemaining / 3_600_000)
+  const ratingLabel = msRemaining > 0
+    ? `Ratings live — window closes in ${hours} hour${hours === 1 ? '' : 's'}`
+    : 'Final ratings'
+
   return (
     <>
       <Navbar />
@@ -220,14 +226,14 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
         </Card>
 
         {/* Match stats */}
-        {gridPlayers.length > 0 && (
+        {match.status === 'COMPLETED' && gridPlayers.length > 0 && (
           <section>
             <h2 className="text-base font-semibold mb-3">Match stats</h2>
             <CompletedMatchGrid
               players={gridPlayers}
               stats={matchStats}
               ratings={matchRatings}
-              ratingWindowEnd={match.ratingWindowEnd}
+              ratingLabel={ratingLabel}
             />
           </section>
         )}
