@@ -11,6 +11,7 @@ import { MapPin, Clock, Users, Coins, Camera, BarChart2, Star } from 'lucide-rea
 import { toIST } from '@/lib/time'
 import JoinOptOutButtons from './components/JoinOptOutButtons'
 import CancelMatchButton from './components/CancelMatchButton'
+import CompletedMatchGrid from '@/app/components/CompletedMatchGrid'
 
 const statusVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   UPCOMING:  'default',
@@ -69,6 +70,19 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
   const confirmed  = match.players.filter(p => p.response === 'CONFIRMED')
   const pending    = match.players.filter(p => p.response === 'PENDING')
   const optedOut   = match.players.filter(p => p.response === 'OPTED_OUT')
+
+  const [matchStats, matchRatings] = await Promise.all([
+    prisma.matchStat.findMany({
+      where:  { matchId: params.id },
+      select: { userId: true, goals: true, assists: true, fouls: true, yellowCard: true, redCard: true },
+    }).catch(() => []),
+    prisma.rating.findMany({
+      where:  { matchId: params.id },
+      select: { ratedId: true, raterId: true, score: true },
+    }).catch(() => []),
+  ])
+
+  const gridPlayers = confirmed.map(p => ({ userId: p.userId, displayName: p.user.displayName }))
 
   return (
     <>
@@ -204,6 +218,19 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
             )}
           </CardContent>
         </Card>
+
+        {/* Match stats */}
+        {gridPlayers.length > 0 && (
+          <section>
+            <h2 className="text-base font-semibold mb-3">Match stats</h2>
+            <CompletedMatchGrid
+              players={gridPlayers}
+              stats={matchStats}
+              ratings={matchRatings}
+              ratingWindowEnd={match.ratingWindowEnd}
+            />
+          </section>
+        )}
 
         {/* Photos preview */}
         {match.photos.length > 0 && (
