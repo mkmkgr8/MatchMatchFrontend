@@ -21,7 +21,7 @@ export default async function RatePage({ params }: { params: { id: string } }) {
 
   const now = new Date()
   if (now < match.endTime)         return <ClosedPage message="Match hasn't ended yet." matchId={params.id} />
-  if (now > match.ratingWindowEnd) return <ClosedPage message="Rating window has closed (24hrs after match end)." matchId={params.id} />
+  if (now > match.ratingWindowEnd) return <ClosedPage message="Rating window has closed (48hrs after match end)." matchId={params.id} />
 
   const myPlayer = match.players.find(p => p.userId === me.id)
   if (!myPlayer || myPlayer.response !== 'CONFIRMED') {
@@ -34,14 +34,12 @@ export default async function RatePage({ params }: { params: { id: string } }) {
 
   const existingMap = new Map(existing.map(r => [r.ratedId, r.score]))
 
-  const players = match.players
-    .filter(p => p.userId !== me.id)
-    .map(p => ({
-      id:           p.userId,
-      displayName:  p.user.displayName,
-      avatarUrl:    p.user.avatarUrl,
-      currentScore: existingMap.get(p.userId) ?? null,
-    }))
+  const players = match.players.map(p => ({
+    id:           p.userId,
+    displayName:  p.user.displayName,
+    avatarUrl:    p.user.avatarUrl,
+    currentScore: existingMap.get(p.userId) ?? null,
+  }))
 
   return (
     <>
@@ -54,7 +52,7 @@ export default async function RatePage({ params }: { params: { id: string } }) {
           <h1 className="text-2xl font-bold">Rate Players</h1>
         </div>
         <p className="text-sm text-muted-foreground mb-6">
-          Rate your teammates 1–10. You can update ratings until the window closes.
+          Rate players 1–10 (including yourself). You can update ratings until the window closes.
         </p>
         <Card>
           <CardHeader>

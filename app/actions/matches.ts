@@ -33,7 +33,7 @@ export async function createMatch(input: {
     ? new Date(`${input.startDate}T${input.confirmByTime}`)
     : new Date(startTime.getTime() - 3 * 60 * 60 * 1000)
 
-  const ratingWindowEnd = new Date(endTime.getTime() + 24 * 60 * 60 * 1000)
+  const ratingWindowEnd = new Date(endTime.getTime() + 48 * 60 * 60 * 1000)
 
   let matchId: string
   try {
